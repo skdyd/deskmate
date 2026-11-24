@@ -13,3 +13,11 @@ python asar_tool.py get     app.asar out/main/index.js index.js
 python patch_multi_monitor.py js index.js
 python asar_tool.py replace app.asar out/main/index.js index.js
 ```
+
+## Live2D 30fps 제한 (2026-11-25)
+- `patch_live2d_fps.py` : Live2D 아바타 렌더링을 30fps로 제한 (PIXI 앱 ticker + 공유 ticker). 모니터 주사율(165Hz)만큼 그리던 것을 줄여 대기 CPU를 낮춤.
+- `live2d-fps.patch` : 같은 변경의 원본 소스(`src/renderer/live2d.ts`) 기준 diff.
+```
+python patch_live2d_fps.py js "...\app\resources\app.asar" 30
+```
+다시 실행하면 값만 바뀝니다. 0을 주면 제한 해제. 적용 전 백업은 `app.asar.bak-fps`.

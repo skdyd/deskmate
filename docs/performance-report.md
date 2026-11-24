@@ -72,3 +72,20 @@ PC: Ryzen 7 9800X3D (16?ㅻ젅??, RX 9070 XT 16 GB (165 Hz), Windows 11.
 4B 鍮꾩쟾 紐⑤뜽??CPU濡??뚮━硫?寃뚯엫怨?CPU瑜??ㅽ닾誘濡?沅뚯옣?섏? ?딆뒿?덈떎.
 
 沅뚯옣 議고빀: **1 + 2 + 3** (VRAM 0 GB濡?寃뚯엫, ?됱냼?먮룄 VRAM ??0.6 GB쨌CPU 肄붿뼱 0.8媛??덉빟). 罹≪쿂???ъ슜???좏깮.
+
+## 4. 적용 결과 (2026-11-25)
+
+적용: Live2D 30fps 제한(`patches/patch_live2d_fps.py`), Ollama KV 캐시 q8_0(사용자 환경변수 `OLLAMA_KV_CACHE_TYPE=q8_0`,
+`OLLAMA_FLASH_ATTENTION=1`; flash attention은 원래 자동으로 켜져 있었음). 게임 모드는 적용 안 함(게임 중에도 화면 보고 말 걸기 유지).
+캡처는 현행(두 화면 2048x576) 유지.
+
+| 항목 | 적용 전 | 적용 후 |
+|---|---|---|
+| Deskmate 대기 CPU (16스레드 기준) | 6.5% | **1.8%** |
+| └ GPU 프로세스 / 렌더러 (코어 1개 기준) | 39% / 22% | **7% / 6%** |
+| GPU 3D 엔진 (대기) | 3% | **0.7%** |
+| Ollama KV 캐시 | 1152 MB | **612 MB** |
+| Ollama 모델 크기 (`ollama ps`) | 4.3 GB | **3.8 GB** |
+| Ollama VRAM (프로세스, 대기 평균) | 5925 MB | **5422 MB** |
+
+화면 보기 응답과 말하기는 적용 후에도 정상 동작(로그 확인). 원본 데이터: `perf-data/samples-after.csv`.

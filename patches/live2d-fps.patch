@@ -1,0 +1,12 @@
+﻿diff --git a/src/renderer/live2d.ts b/src/renderer/live2d.ts
+index cf33116..1a5bffc 100644
+--- a/src/renderer/live2d.ts
++++ b/src/renderer/live2d.ts
+@@ -38,6 +38,7 @@ export function createLive2DAvatar(canvas: HTMLCanvasElement, character: Charact
+     autoDensity: true,
+     resolution: window.devicePixelRatio || 1
+   })
++  app.ticker.maxFPS = 30; PIXI.Ticker.shared.maxFPS = 30; // [live2d-fps patch]
+   let model: Live2DModel | null = null
+   let fakeMouth = 0
+   let settleSpeak: ((ok: boolean) => void) | null = null
