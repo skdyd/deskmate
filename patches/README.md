@@ -30,3 +30,26 @@ python patch_live2d_fps.py js "...\app\resources\app.asar" 30
 python patch_dots.py js "...\app\resources\app.asar"
 ```
 다시 실행하면 이전 버전을 교체합니다. 적용 전 백업은 `app.asar.bak-dots`.
+
+## 목소리 전환 + 말 속도 (2026-11-25)
+- `patch_voices_server.py` : 로컬 음성 서버(`app\resources\tts-local\server.py`, asar 밖)에 프리셋 추가. Kokoro 목소리를 섞고 리샘플링으로 음높이를 올려 더 젊은 톤으로 만듦: `bella_up13`, `bella_up15`, `heart_up15`, `bellasky_up15`(bella 70% + sky 30%), `heartbella_up20`(heart+bella 반반). 백업 `server.py.bak-voices`.
+- `patch_voices.py` : 대화창 캐릭터 드롭다운 옆에 목소리 메뉴와 속도 메뉴(0.7~1, 기본 0.85) 추가. 선택은 localStorage에 기억되고, main이 `DESKMATE_TTS_VOICE` / `DESKMATE_TTS_SPEED`를 바꿔 다음 말(교정 포함)부터 적용. 브라우저 대체 목소리에도 기호 정리 적용. 백업 `app.asar.bak-voices`.
+```
+python patch_voices_server.py "...\app\resources\tts-local\server.py"
+python patch_voices.py "...\app\resources\app.asar"
+```
+
+## 음성 기호 정리 (2026-11-25)
+- `patch_speech_clean.py` : 음성 서버가 읽기 전에 이모지, *행동 묘사*(*sigh*), 마크다운 기호, 따옴표, 괄호, 링크를 뺌. 한 단어 강조(*very*)는 단어만 읽음. 말풍선 글자는 그대로. 읽을 게 없으면 오류 대신 0.3초 무음. 백업 `server.py.bak-clean`.
+```
+python patch_speech_clean.py "...\app\resources\tts-local\server.py"
+```
+
+## 마지막 상태 기억 (2026-11-25)
+- `patch_remember_character.py` : `.env`의 `DESKMATE_CHARACTER`보다 마지막에 고른 캐릭터(settings.json `activeCharacter`)를 우선. 백업 `app.asar.bak-remember`.
+- `patch_remember_toggles.py` : 마이크(listening)와 watch 켜짐/꺼짐을 settings.json(`micOn`, `watchOn`)에 저장하고 다음 실행 때 복원. 추가한 줄은 모두 `// [remember-toggles patch]` 표시. 백업 `app.asar.bak-toggles`.
+```
+python patch_remember_character.py "...\app\resources\app.asar"
+python patch_remember_toggles.py "...\app\resources\app.asar"
+```
+모든 스크립트는 다시 실행해도 안전합니다(이미 적용돼 있으면 교체하거나 그대로 둠). Deskmate는 반드시 `start_deskmate.bat`(또는 바탕화면 아이콘)으로 실행해야 음성 서버가 같이 뜹니다.
