@@ -1,0 +1,21 @@
+# 비밀값
+.env
+*.key
+# 큰 모델 파일
+*.vrm
+*.moc3
+*.pmx
+*.glb
+*.obj
+*.onnx
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.gguf
+*.pt
+models/
+# 런타임 데이터
+memory/
+logs/
+node_modules/
