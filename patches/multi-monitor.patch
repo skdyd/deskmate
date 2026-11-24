@@ -1,0 +1,120 @@
+diff --git a/src/main/brain.ts b/src/main/brain.ts
+index 3f3ce83..75b8e07 100644
+--- a/src/main/brain.ts
++++ b/src/main/brain.ts
+@@ -17,7 +17,7 @@ export interface TaskReport {
+ export interface Stimulus {
+   kind: 'chat' | 'observe' | 'touch' | 'task'
+   text?: string
+-  screenshot?: { data: string; mediaType: 'image/jpeg' | 'image/png' }
++  screenshot?: { data: string; mediaType: 'image/jpeg' | 'image/png'; monitors?: number }
+   fileEvents?: string[]
+   touch?: Touch
+   /** observe only: true when the user pressed "look" themselves (she must answer), false for the periodic watch */
+@@ -381,7 +381,7 @@ export class Brain {
+         return `${stimulus.text ?? ''}\n\n[The web page open in their Chrome is "${p.title}" (${p.url}). Its text, as far as it fits:\n${p.text}\n]\nAnswer from the page. If they want the gist, give it in two to four spoken sentences; keep names, numbers and prices exact; say so if the page does not hold the answer.${spoken}`
+       }
+       if (stimulus.screenshot) {
+-        return `${stimulus.text ?? ''}\n\n[A screenshot of their screen is attached for context. Use it if the message is about what is on screen; otherwise answer the message and don't describe the screen.]${spoken}`
++        return `${stimulus.text ?? ''}\n\n[A screenshot of their screen${(stimulus.screenshot.monitors ?? 1) > 1 ? `s (${stimulus.screenshot.monitors} monitors side by side, left to right)` : ''} is attached for context. Use it if the message is about what is on screen; otherwise answer the message and don't describe the screen.]${spoken}`
+       }
+       if (stimulus.blind) {
+         return `${stimulus.text ?? ''}\n\n[You cannot see their screen right now: screen capture is not permitted on this computer. Say that plainly in your own voice and ask them to allow Screen Recording for the app; do not guess what is on the screen.]`
+@@ -429,7 +429,7 @@ export class Brain {
+     const events = stimulus.fileEvents?.length
+       ? `Project file changes since you last looked:\n${stimulus.fileEvents.join('\n')}`
+       : 'No project file changes since you last looked.'
+-    const seen = stimulus.screenshot ? ' (screenshot attached)' : ' (no screenshot available: you cannot see the screen right now, say so if it matters)'
++    const seen = stimulus.screenshot ? ((stimulus.screenshot.monitors ?? 1) > 1 ? ` (screenshot attached: ${stimulus.screenshot.monitors} monitors side by side, left to right)` : ' (screenshot attached)') : ' (no screenshot available: you cannot see the screen right now, say so if it matters)'
+     if (stimulus.manual) {
+       return `[They just asked you to look at their screen${seen}.]\n${events}\nYou must say something: react to what they are doing, tease, notice a detail, or ask about it. One or two sentences. "speak" is true.`
+     }
+diff --git a/src/main/index.ts b/src/main/index.ts
+index 98d6087..f538541 100644
+--- a/src/main/index.ts
++++ b/src/main/index.ts
+@@ -408,28 +408,56 @@ function status(text: string): void {
+   win?.webContents.send('status', text)
+ }
+ 
+-/** One downscaled JPEG of the primary display. The overlay hides itself for the instant of the capture. */
++/** One downscaled JPEG of all displays side by side. The overlay hides itself for the instant of the capture. */
+ async function captureScreen(): Promise<Stimulus['screenshot']> {
+   if (process.platform === 'darwin' && systemPreferences.getMediaAccessStatus('screen') !== 'granted') {
+     console.warn(`[screen] access status: ${systemPreferences.getMediaAccessStatus('screen')} (needs Screen Recording permission)`)
+     status('I cannot see your screen yet. System Settings → Privacy & Security → Screen Recording → allow Deskmate (or Electron in dev), then restart me.')
+   }
+-  const display = screen.getPrimaryDisplay()
+-  const width = 1280
+-  const height = Math.round((display.size.height / display.size.width) * width)
+-  win.setOpacity(0)
++  // [multi-monitor patch] capture every display and stitch them left to right into one picture.
++  const displays = screen.getAllDisplays().slice().sort((a: Electron.Display, b: Electron.Display) => a.bounds.x - b.bounds.x || a.bounds.y - b.bounds.y);
++  const maxWidth = Math.max(640, Number(process.env.DESKMATE_CAPTURE_WIDTH) || 2048);
++  const aspectSum = displays.reduce((s: number, d: Electron.Display) => s + d.size.width / d.size.height, 0) || 16 / 9;
++  const rowHeight = Math.max(240, Math.round(maxWidth / aspectSum));
++  const widest = displays.reduce((m: number, d: Electron.Display) => Math.max(m, d.size.width / d.size.height), 16 / 9);
++  win.setOpacity(0);
+   try {
+-    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width, height } })
+-    const source = sources.find((s) => s.display_id === String(display.id)) ?? sources[0]
+-    if (!source || source.thumbnail.isEmpty()) {
+-      // macOS says "granted" but hands back nothing after the app binary changed (dev reinstall, update):
+-      // the permission has to be toggled off and on again for this app.
+-      console.warn(`[screen] capture came back empty (${sources.length} source(s)); Screen Recording permission is probably stale`)
+-      status('My eyes are off: screen capture returned nothing. System Settings → Privacy & Security → Screen Recording → switch Deskmate (or Electron) off and on, then restart me.')
+-      return undefined
++    const sources = await desktopCapturer.getSources({
++      types: ["screen"],
++      thumbnailSize: { width: Math.round(rowHeight * widest), height: rowHeight }
++    });
++    const shots: Electron.NativeImage[] = [];
++    for (const d of displays) {
++      const s = sources.find((x) => x.display_id === String(d.id));
++      if (s && !s.thumbnail.isEmpty()) shots.push(s.thumbnail);
++    }
++    // Some setups report no display_id: fall back to every screen source in the order given.
++    if (!shots.length) for (const s of sources) if (!s.thumbnail.isEmpty()) shots.push(s.thumbnail);
++    if (!shots.length) {
++      console.warn(`[screen] capture came back empty (${sources.length} source(s)); Screen Recording permission is probably stale`);
++      status("My eyes are off: screen capture returned nothing. System Settings → Privacy & Security → Screen Recording → switch Deskmate (or Electron) off and on, then restart me.");
++      return;
++    }
++    const parts = shots.map((img) => (img.getSize().height === rowHeight ? img : img.resize({ height: rowHeight, quality: "good" })));
++    let thumb = parts[0];
++    if (parts.length > 1) {
++      const sizes = parts.map((p) => p.getSize());
++      const H = Math.max(...sizes.map((z) => z.height));
++      const W = sizes.reduce((s: number, z) => s + z.width, 0);
++      const out = Buffer.alloc(W * H * 4);
++      let x0 = 0;
++      parts.forEach((p, i) => {
++        const w = sizes[i].width;
++        const h = sizes[i].height;
++        const src = p.toBitmap();
++        const stride = Math.floor(src.length / h);
++        for (let y = 0; y < h; y++) src.copy(out, (y * W + x0) * 4, y * stride, y * stride + w * 4);
++        x0 += w;
++      });
++      thumb = nativeImage.createFromBitmap(out, { width: W, height: H });
+     }
+-    // A stale Screen Recording grant (after an app update or a dev reinstall) yields a black frame, not an error.
+-    const bmp = source.thumbnail.toBitmap()
++    const monitors = parts.length;
++    const bmp = thumb.toBitmap();
+     let sum = 0
+     const step = 4 * 97 // sample every 97th pixel
+     for (let i = 0; i < bmp.length; i += step) sum += bmp[i] + bmp[i + 1] + bmp[i + 2]
+@@ -439,9 +467,10 @@ async function captureScreen(): Promise<Stimulus['screenshot']> {
+       status('My eyes are off: the screen comes back black. System Settings → Privacy & Security → Screen Recording → switch Deskmate (or Electron) off and on again, then restart me.')
+       return undefined
+     }
+-    const jpeg = source.thumbnail.toJPEG(60)
++    const jpeg = thumb.toJPEG(60)
+     if (process.env.DESKMATE_DEBUG_SAVE_CAPTURE) writeFileSync(process.env.DESKMATE_DEBUG_SAVE_CAPTURE, jpeg)
+-    return { data: jpeg.toString('base64'), mediaType: 'image/jpeg' }
++    if (process.env.DESKMATE_DEBUG_LOOK) console.log(`[screen] ${monitors} monitor(s) -> ${thumb.getSize().width}x${thumb.getSize().height}, ${jpeg.length} bytes`)
++    return { data: jpeg.toString('base64'), mediaType: 'image/jpeg', monitors }
+   } finally {
+     win.setOpacity(1)
+   }
