@@ -21,3 +21,12 @@ python asar_tool.py replace app.asar out/main/index.js index.js
 python patch_live2d_fps.py js "...\app\resources\app.asar" 30
 ```
 다시 실행하면 값만 바뀝니다. 0을 주면 제한 해제. 적용 전 백업은 `app.asar.bak-fps`.
+
+## 점 컨트롤 + 클릭 통과 (2026-11-25)
+- `patch_dots.py` : 캐릭터 창을 점 5개(발 아래)만 클릭되게 바꿈. 왼쪽부터 클릭 반응 켜기/끄기, 작게(−), 끌어서 이동, 크게(+), 대화창 보이기/숨기기. 나머지(캐릭터 몸, 말풍선)는 클릭이 뒤 창으로 통과. 반응/대화창/크기(60~130%)는 다음 실행에도 유지.
+  이동할 때는 캐릭터 몸(투명 여백 제외)만 커서가 있는 모니터 안에 있으면 되고, 말풍선은 폭 280px로 화면 안쪽에 맞춰 놓여 옆 모니터로 넘어가지 않음. renderer 번들, preload, main(`window:move-by`, `window:zoom`)을 고침.
+- `dots.patch` : 같은 변경의 원본 소스(`src/renderer/main.ts`, `src/preload/index.ts`, `src/shared/types.ts`, `src/main/index.ts`) 기준 diff.
+```
+python patch_dots.py js "...\app\resources\app.asar"
+```
+다시 실행하면 이전 버전을 교체합니다. 적용 전 백업은 `app.asar.bak-dots`.
