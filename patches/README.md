@@ -53,3 +53,26 @@ python patch_remember_character.py "...\app\resources\app.asar"
 python patch_remember_toggles.py "...\app\resources\app.asar"
 ```
 모든 스크립트는 다시 실행해도 안전합니다(이미 적용돼 있으면 교체하거나 그대로 둠). Deskmate는 반드시 `start_deskmate.bat`(또는 바탕화면 아이콘)으로 실행해야 음성 서버가 같이 뜹니다.
+
+## 2026-11-25 저녁 추가분 (버전 1.0.0)
+모두 `python <스크립트> "...\app\resources\app.asar"` 형식이고, 적용 전 백업(`app.asar.bak-*`)을 남깁니다. 위에서 아래 순서로 적용하세요.
+
+| 스크립트 | 내용 |
+|---|---|
+| `patch_grammar_check.py` | 영어 대화 뒤 Ollama로 문법 검사, 교정 한 줄을 덧붙임 (`DESKMATE_GRAMMAR_CHECK=0`으로 끔) |
+| `patch_select_options.py` | 드롭다운 옵션 정리 |
+| `patch_upper_body.py` | 발을 패널 바로 위에 붙이고, 6번째 점으로 보이는 부분을 전신→4/5→…→1/5 (캐릭터별 기억) |
+| `patch_zoom_max.py` | 크기 최대 2배, 커질 때 창 폭도 같이 넓힘 |
+| `patch_fullheight.py` | 창이 모니터 높이일 때 머리가 화면 꼭대기까지, 말풍선은 머리 위 |
+| `patch_accessories.py` | "소품" 드롭다운: 모델의 표현식(앞치마, 안경…) 켜고 끄기, 캐릭터별 기억. exp3.json에 `"DeskmateHidden": true`면 목록에서 숨김 |
+| `patch_touch.py` | 터치 14부위(+ `touchLayout: "chibi"`), 톡/연타/쓰다듬기/길게 누르기/끌기, `touch-prompts.json`(config/) 지시문 |
+| `patch_ontop.py` + `patch_ontop_fix.py` | 2초마다 항상 위 재설정 (포커스 중엔 moveTop 안 함) |
+| `patch_watch.py` (+ `patch_watch_blinkfix.py`) | 화면 보기: 마우스 있는 모니터만 1280px, 활성 창 제목·프로그램을 텍스트로, 추측 금지, 최근 말 반복 금지 |
+| `patch_ears_queue.py` | 대답 중 들은 말을 버리지 않고 하나 기억했다가 이어서 대답 |
+| `patch_capture_exclude.py` + `patch_capture_toggle.py` | 캡처에서 캐릭터 제외(깜빡임 없음), 트레이 "캡처에서 숨기기"로 켜고 끔 |
+| `patch_compact_panel.py` + `patch_panel_rows.py` | 패널 최대 420px, 3줄 고정(상태 / 선택창 / 입력) |
+| `patch_chatlog.py` + `patch_chatlog_pos.py` | 트레이 "대화 기록 보기" 창, 위치·크기 기억 |
+| `patch_stt_server.py` (server.py 대상) + `patch_stt_menu.py` | 음성 인식 모델 선택(base/small CPU, large-v3-turbo GPU via whisper.cpp Vulkan), 캐릭터 이름 힌트 |
+| `patch_version.py` | 트레이 맨 위에 패치 버전 표시 (`VERSION` 파일) |
+
+GPU 음성 인식: LunarG Vulkan SDK 설치 후 `tools/whispercpp-build.cmd`로 whisper.cpp(공식 소스)를 빌드하고 `ggml-large-v3-turbo-q8_0.bin`을 `voice\whispercpp\models`에 둡니다.

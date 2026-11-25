@@ -1,0 +1,46 @@
+{
+  "_설명": "캐릭터를 만졌을 때 AI에게 보내는 지시문. 저장하면 다음 터치부터 바로 적용(앱 재시작 불필요). 목록([...])은 그중 하나를 무작위로 씀. 영어로 쓰는 게 반응이 좋음. {area}=부위 표현, {count}=연타 횟수, {n}=최근 터치 횟수.",
+  "areas": {
+    "head": ["the top of your head", "your head"],
+    "hair": ["your hair", "a strand of your hair"],
+    "face": ["your face", "the tip of your nose", "your forehead"],
+    "cheek": ["your cheek", "your soft cheek"],
+    "neck": ["your neck", "your collarbone"],
+    "shoulder": ["your shoulder"],
+    "arm": ["your arm", "your elbow"],
+    "hand": ["your hand", "your fingers"],
+    "chest": ["your chest"],
+    "belly": ["your tummy", "your side"],
+    "hips": ["your hip", "your skirt"],
+    "legs": ["your leg", "your knee", "your thigh"],
+    "feet": ["your foot", "your shoe"]
+  },
+  "gestures": {
+    "tap": ["They just poked {area}.", "They tapped {area} with the cursor.", "They gave {area} a little poke."],
+    "rapid": ["They poked {area} {count} times in a row, fast.", "They keep jabbing {area}, {count} times just now."],
+    "stroke": ["They are gently stroking {area}.", "They are petting {area} back and forth."],
+    "hold": ["They pressed on {area} and are holding it there.", "They pushed {area} and won't let go."],
+    "drag": ["They grabbed you, dragged you around the screen for a moment, and put you down somewhere else.", "They picked you up and moved you to another spot on the screen."]
+  },
+  "areaNotes": {
+    "chest": "React in character: flustered, teasing or scolding, your call. Suggestive at most, never explicit.",
+    "hips": "React in character: flustered or scolding. Suggestive at most, never explicit.",
+    "legs": "Playful or a little flustered is fine. Never explicit.",
+    "head": "Head pats are usually welcome.",
+    "hand": "Maybe they want to hold hands."
+  },
+  "styles": [
+    "Be playful.",
+    "Tease them a little.",
+    "Act a bit shy.",
+    "Pretend to be annoyed, but you secretly like it.",
+    "Ask why they did that.",
+    "Make a small joke.",
+    "Respond with a short reaction sound, then one line."
+  ],
+  "annoyedAfter": 5,
+  "annoyed": [
+    "They keep touching you ({n} times in the last minute or so). Show that it is getting a bit much.",
+    "That is {n} touches in about a minute. Complain or ask what they want."
+  ]
+}
