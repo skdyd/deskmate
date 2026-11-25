@@ -1,6 +1,6 @@
 """[ontop patch] keep Deskmate above normal windows: Windows sometimes drops the topmost flag (after resizing,
-focus changes or another topmost app), so every 2 s re-assert it and move the window to the top of the topmost band
-(no focus change). usage: python patch_ontop.py <app.asar>   (re-runnable)"""
+focus changes or another topmost app), so every 2 s re-assert it when it is lost. No moveTop(): that covered the
+taskbar's tray overflow, tooltips and dropdown lists. usage: python patch_ontop.py <app.asar>   (re-runnable)"""
 import shutil, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -11,7 +11,6 @@ B = A + '''	// [ontop patch] re-assert always-on-top; Windows can lose it
 	setInterval(() => {
 		if (!win || win.isDestroyed() || !win.isVisible()) return;
 		if (!win.isAlwaysOnTop()) win.setAlwaysOnTop(true, "floating");
-		if (!win.isFocused()) win.moveTop(); // not while she has focus: it would cover her own dropdown lists
 	}, 2e3);
 '''
 inner = "out/main/index.js"
